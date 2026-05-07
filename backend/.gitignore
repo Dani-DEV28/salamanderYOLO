@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project specific
+venvvenv/
+data/captured/
+data/dataset/
+data/videos/
+runs/
+results/
+
+# Model files
+*.pt
+*.pth
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
