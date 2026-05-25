@@ -1,3 +1,6 @@
+fastapi
+uvicorn[standard]
+python-multipart
 ultralytics>=8.3.0
 opencv-python>=4.8.0
 matplotlib>=3.7.0
