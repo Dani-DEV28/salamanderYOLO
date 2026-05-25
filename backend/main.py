@@ -1,6 +1,11 @@
-from fastapi import FastAPI
+import time
+from pathlib import Path
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
+VIDEOS_DIR = Path(__file__).parent / "videos"
+VIDEOS_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(title="Salamander Tracker POC")
 
@@ -11,11 +16,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
 
 @app.get("/")
 def root():
     return {"ok": True}
 
+@app.post("/track")
+def start_track(video: UploadFile = File(...)):
+    (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
+    return {
+        "status": "received",
+        "video_url": f"http://localhost:8000/videos/input.mp4?t={int(time.time())}",
+    }
 
 if __name__ == "__main__":
     import uvicorn
