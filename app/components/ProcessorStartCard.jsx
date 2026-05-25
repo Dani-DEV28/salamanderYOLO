@@ -103,7 +103,31 @@ export default function ProcessorStartCard() {
                 </div>
             </form>
             {loading && <p>Processing...</p>}
-            {response && <video src={response.video_url} controls />}
+            {response && (
+                <>
+                    <video src={response.video_url} controls />
+                    {response.tracks && response.tracks.length > 0 && (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Track ID</th>
+                                    <th>Label</th>
+                                    <th>Time on Screen (s)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {response.tracks.map((track) => (
+                                    <tr key={track.track_id}>
+                                        <td>{track.track_id}</td>
+                                        <td>{track.label}</td>
+                                        <td>{track.time_on_screen_s}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </>
+            )}
         </>
     )
 }
