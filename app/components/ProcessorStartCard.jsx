@@ -20,6 +20,7 @@ export default function ProcessorStartCard() {
     const [URL, setURL] = useState("");
     const [file, setFile] = useState(null);
     const [response, setResponse] = useState(null);
+    const [loading, setLoading] = useState(false);
 
 
     async function handleSubmit(e) {
@@ -27,10 +28,13 @@ export default function ProcessorStartCard() {
         if (!file) return;
 
         try {
+            setLoading(true);
             const data = await uploadVideo(file);
             setResponse(data);
         } catch (err) {
             console.error(err);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -86,17 +90,20 @@ export default function ProcessorStartCard() {
 
 
     return (
-        <form className="container-card-starter" onSubmit={handleSubmit}>
-            <div className="card-row">
-                <div className="card-left">
-                    <ul>
-                        <li>Import Video </li>
-                        <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files[0])} />
-                        {response && <video src={response.video_url} controls />}
-                        <button type="submit">Submit</button>
-                    </ul>
+        <>
+            <form className="container-card-starter" onSubmit={handleSubmit}>
+                <div className="card-row">
+                    <div className="card-left">
+                        <ul>
+                            <li>Import Video </li>
+                            <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files[0])} />
+                            <button type="submit" disabled={loading}>Submit</button>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </form>
+            </form>
+            {loading && <p>Processing...</p>}
+            {response && <video src={response.video_url} controls />}
+        </>
     )
 }
