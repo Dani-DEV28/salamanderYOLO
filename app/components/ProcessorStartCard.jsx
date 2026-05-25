@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { getJobStatus } from '../api/binarize/route';
 
 import TrackingOverlay from '@/app/components/imgCondition/TrackingOverlay';
-import DropDown from '@/app/components/imgCondition/DropDown';
+import Upload from '@/app/components/imgCondition/Upload';
 import { BinarizeCanvas, RenderImg } from '@/app/components/imgCondition/BinarizeCanvas';
+import { uploadVideo } from "../api/binarize/routes";
 
 import SoundButton from '@/app/components/ConfirmButton';
 import StatusCard from '@/app/components/StatusCard';
@@ -12,11 +13,26 @@ import StatusCard from '@/app/components/StatusCard';
 export default function ProcessorStartCard() {
     const [rangeNum, setNum] = useState(60);
     const [hexNum, setHex] = useState("#2a3e25");
-    const [filename, setFile] = useState("");
+    //const [filename, setFile] = useState("");
     const [centroid, setCentroid] = useState(null);
     const [jobId, setJobId] = useState("");
     const [statusFE, setStatusFe] = useState("");
     const [URL, setURL] = useState("");
+    const [file, setFile] = useState(null);
+    const [response, setResponse] = useState(null);
+
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        if (!file) return;
+
+        try {
+            const data = await uploadVideo(file);
+            setResponse(data);
+        } catch (err) {
+            console.error(err);
+        }
+    }
 
     function setNumState(event) {
         setNum(event.target.value);
@@ -70,43 +86,17 @@ export default function ProcessorStartCard() {
 
 
     return (
-        <form className="container-card-starter" onSubmit={e => { e.preventDefault(); }}>
+        <form className="container-card-starter" onSubmit={handleSubmit}>
             <div className="card-row">
                 <div className="card-left">
                     <ul>
-                        <li>Import Video <DropDown event={setFileName} /></li>
-                        {filename != "" && <>
-                            <li>Color <input type="color" id="color" name="color" defaultValue={hexNum} onInput={setColor}></input></li>
-                            <li>Threshold <input type="range" min="0" max="100" defaultValue={rangeNum} onInput={setNumState}></input><p>{rangeNum}</p></li>
-                        </>}
-
+                        <li>Import Video </li>
+                        <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files[0])} />
+                        {response && <video src={response.video_url} controls />}
+                        <button type="submit">Submit</button>
                     </ul>
                 </div>
-                {filename != "" && 
-                <div className="card-right" style={{ position: "relative" }}>
-                    <div className='imageFetchBE'><RenderImg filename={filename} /></div>
-                    <div className="canvas-wrapper">
-                        <BinarizeCanvas
-                        filename={filename}
-                        hexColor={hexNum}
-                        threshold={rangeNum}
-                        onObjectFound={(c, _pixels, imgSize) => setCentroid({ ...c, imgSize })}
-                        />
-                        <TrackingOverlay point={centroid} />
-                    </div>
-                </div>
-                }
             </div>
-
-            {filename != "" && <div className="button-lower">
-                <SoundButton file={filename} hex={hexNum} threshold={rangeNum} setJob={setJob}/>
-            </div>
-            }
-
-            {jobId != "" && <div className="button-lower">
-                <StatusCard setURL={URL} statusFE={statusFE} />
-            </div>
-            }
         </form>
     )
 }
