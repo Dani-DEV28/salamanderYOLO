@@ -62,6 +62,8 @@ def run_track_job():
 
         frames_seen = defaultdict(int)
         label_for = {}
+        count_over_time = []
+        last_recorded_second = -1
 
         tracker_path = Path(ultralytics.__file__).parent / "cfg" / "trackers" / "bytetrack.yaml"
         with open(tracker_path) as f:
@@ -78,6 +80,7 @@ def run_track_job():
             if not ok:
                 break
 
+            tracks = []
             result = model.predict(frame, verbose=False, conf=0.1)[0]
             boxes = result.boxes
 
@@ -90,9 +93,18 @@ def run_track_job():
                         frames_seen[tid] += 1
                         label_for[tid] = model.names[cls_id]
 
+            active_count = len(tracks) if tracks is not None else 0
+            current_second = int(frame_idx / fps) if fps else frame_idx
+            if current_second != last_recorded_second:
+                count_over_time.append({
+                    "second": current_second,
+                    "count": active_count,
+                })
+                last_recorded_second = current_second
+
             writer.write(result.plot())
             if frame_idx % 30 == 0:
-                print(f"frame {frame_idx}/{total} | tracks: {len(tracks) if tracks is not None else 0}")
+                print(f"frame {frame_idx}/{total} | tracks: {active_count}")
             job["percent"] = int((frame_idx + 1) / total * 100)
 
         cap.release()
@@ -127,6 +139,7 @@ def run_track_job():
         job["result"] = {
             "video_url": f"http://localhost:8000/videos/output_final.mp4?t={int(time.time())}",
             "tracks": tracks,
+            "count_over_time": count_over_time,
         }
     except Exception as e:
         print(f"error: {e}", flush=True)

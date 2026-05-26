@@ -94,6 +94,24 @@ export default function ProcessorStartCard() {
                             </tbody>
                         </table>
                     )}
+                    {result.count_over_time && result.count_over_time.length > 0 && (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Time (s)</th>
+                                    <th>Salamanders on Screen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {result.count_over_time.map((item) => (
+                                    <tr key={item.second}>
+                                        <td>{item.second}</td>
+                                        <td>{item.count}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </>
             )}
         </>
