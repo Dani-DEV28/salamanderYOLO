@@ -140,7 +140,7 @@ export async function startProcessing(filename, targetColor, threshold) {
 }
 
 export async function getJobStatus(jobId) {
-  const res = await fetch(`http://localhost:3000/process/${jobId}/status`);
+  const res = await fetch(`http://localhost:8000/track`);
 
   const data = await res.json();
   console.log(data);

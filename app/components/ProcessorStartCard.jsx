@@ -2,24 +2,12 @@
 import { useState, useEffect } from "react";
 import { getJobStatus } from '../api/binarize/route';
 
-import TrackingOverlay from '@/app/components/imgCondition/TrackingOverlay';
-import Upload from '@/app/components/imgCondition/Upload';
-import { BinarizeCanvas, RenderImg } from '@/app/components/imgCondition/BinarizeCanvas';
 import { uploadVideo } from "../api/binarize/routes";
 
-import SoundButton from '@/app/components/ConfirmButton';
-import StatusCard from '@/app/components/StatusCard';
-
 export default function ProcessorStartCard() {
-    const [rangeNum, setNum] = useState(60);
-    const [hexNum, setHex] = useState("#2a3e25");
-    //const [filename, setFile] = useState("");
-    const [centroid, setCentroid] = useState(null);
-    const [jobId, setJobId] = useState("");
-    const [statusFE, setStatusFe] = useState("");
-    const [URL, setURL] = useState("");
     const [file, setFile] = useState(null);
-    const [response, setResponse] = useState(null);
+    const [status, setStatus] = useState("");
+    const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
 
 
@@ -30,7 +18,7 @@ export default function ProcessorStartCard() {
         try {
             setLoading(true);
             const data = await uploadVideo(file);
-            setResponse(data);
+            setStatus(data.status || "processing");
         } catch (err) {
             console.error(err);
         } finally {
@@ -38,40 +26,21 @@ export default function ProcessorStartCard() {
         }
     }
 
-    function setNumState(event) {
-        setNum(event.target.value);
-    }
-
-    function setColor(event) {
-        setHex(event.target.value);
-    }
-
-    function setFileName(event) {
-        setFile(event.target.value);
-        console.log(filename);
-    }
-
-    function setJob(data) {
-        setJobId(data);
-    }
-
     useEffect(() => {
-        if (!jobId) return;
+        if (status !== "processing") return;
 
         let intervalId = null;
-        let stopped = false;
 
         async function poll() {
             try {
-                const status = await getJobStatus(jobId.jobId);
-                setURL(jobId.jobId);
-                console.log("URL:", URL);
-                setStatusFe(status.status);
-                console.log("STATUS:", status);
+                const job = await getJobStatus();
+                console.log("STATUS:", job);
 
-                if (status.status === "done") {
-                    console.log("Job finished!", status.result);
-                    stopped = true;
+                setStatus(job.status || "processing");
+
+                if (job.status === "done") {
+                    console.log("Job finished!", job.result);
+                    setResult(job.result);
                     clearInterval(intervalId);
 
                 }
@@ -84,9 +53,8 @@ export default function ProcessorStartCard() {
 
         return () => {
             clearInterval(intervalId);
-            stopped = true;
         };
-    }, [jobId])
+    }, [status])
 
 
     return (
@@ -102,11 +70,11 @@ export default function ProcessorStartCard() {
                     </div>
                 </div>
             </form>
-            {loading && <p>Processing...</p>}
-            {response && (
+            {(loading || status === "processing") && <p>Processing...</p>}
+            {result && (
                 <>
-                    <video src={response.video_url} controls />
-                    {response.tracks && response.tracks.length > 0 && (
+                    <video src={result.video_url} controls />
+                    {result.tracks && result.tracks.length > 0 && (
                         <table>
                             <thead>
                                 <tr>
@@ -116,7 +84,7 @@ export default function ProcessorStartCard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {response.tracks.map((track) => (
+                                {result.tracks.map((track) => (
                                     <tr key={track.track_id}>
                                         <td>{track.track_id}</td>
                                         <td>{track.label}</td>
