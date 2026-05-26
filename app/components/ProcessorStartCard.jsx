@@ -1,98 +1,62 @@
 'use client';
 import { useState, useEffect } from "react";
 import { getJobStatus } from '../api/binarize/route';
-
-import TrackingOverlay from '@/app/components/imgCondition/TrackingOverlay';
-import Upload from '@/app/components/imgCondition/Upload';
-import { BinarizeCanvas, RenderImg } from '@/app/components/imgCondition/BinarizeCanvas';
 import { uploadVideo } from "../api/binarize/routes";
 
-import SoundButton from '@/app/components/ConfirmButton';
-import StatusCard from '@/app/components/StatusCard';
-
 export default function ProcessorStartCard() {
-    //const [rangeNum, setNum] = useState(60);
-    //const [hexNum, setHex] = useState("#2a3e25");
-    //const [filename, setFile] = useState("");
-    //const [centroid, setCentroid] = useState(null);
-    const [jobId, setJobId] = useState("");
-    const [statusFE, setStatusFe] = useState("");
-    const [URL, setURL] = useState("");
     const [file, setFile] = useState(null);
-    const [response, setResponse] = useState(null);
-    const [polling, setPolling] = useState(false);
+    const [status, setStatus] = useState("");
+    const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
     const [percent, setPercent] = useState(0);
-    const [result, setResult] = useState(null);
 
     async function handleSubmit(e) {
         e.preventDefault();
         if (!file) return;
 
-        setResult(null);
-        setPercent(0);
-        await uploadVideo(file);
-        setPolling(true);
-    }
-
-    // async function handleSubmit(e) {
-    //     e.preventDefault();
-    //     if (!file) return;
-
-    //     try {
-    //         setLoading(true);
-    //         const data = await uploadVideo(file);
-    //         setResponse(data);
-    //     } catch (err) {
-    //         console.error(err);
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // }
-
-    function setNumState(event) {
-        setNum(event.target.value);
-    }
-
-    function setColor(event) {
-        setHex(event.target.value);
-    }
-
-    function setFileName(event) {
-        setFile(event.target.value);
-        console.log(filename);
-    }
-
-    function setJob(data) {
-        setJobId(data);
+        try {
+            setLoading(true);
+            setPercent(0);
+            const data = await uploadVideo(file);
+            setStatus(data.status || "processing");
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     }
 
     useEffect(() => {
-        if (!polling) return;
+        if (status !== "processing") return;
 
-        const intervalId = setInterval(async () => {
+        let intervalId = null;
+
+        async function poll() {
             try {
                 const job = await getJobStatus();
+                console.log("STATUS:", job);
+
                 setPercent(job.percent ?? 0);
+                setStatus(job.status || "processing");
 
                 if (job.status === "done") {
+                    console.log("Job finished!", job.result);
                     setResult(job.result);
-                    setPolling(false);
                     setPercent(100);
                     clearInterval(intervalId);
-                } else if (job.status === "error") {
-                    console.error("Job error:", job.message);
-                    setPolling(false);
-                    clearInterval(intervalId);
+
                 }
             } catch (err) {
-                console.error("Polling error:", err);
+                console.error("Error polling job:", err);
             }
-        }, 2000);
+        }
+        intervalId = setInterval(poll, 2000);
+        poll();
 
-        return () => clearInterval(intervalId);
-    }, [polling]);
-
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [status])
 
 
     return (
@@ -108,7 +72,7 @@ export default function ProcessorStartCard() {
                     </div>
                 </div>
             </form>
-            {polling && (
+            {(loading || status === "processing") && (
                 <>
                     <p>Processing...</p>
                     <progress value={percent} max={100} />
@@ -116,7 +80,6 @@ export default function ProcessorStartCard() {
             )}
             {result && (
                 <>
-                    <progress value={100} max={100} />
                     <video src={result.video_url} controls />
                     {result.tracks && result.tracks.length > 0 && (
                         <table>
