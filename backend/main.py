@@ -3,6 +3,7 @@ import cv2
 import yaml
 import ultralytics
 import subprocess
+from threading import Thread
 from collections import defaultdict
 from ultralytics import YOLO
 from pathlib import Path
@@ -27,6 +28,7 @@ app.add_middleware(
 )
 
 app.mount("/videos", StaticFiles(directory=str(VIDEOS_DIR)), name="videos")
+job = {"status": "idle"}
 
 model = YOLO("best.pt")
 print(model.names)
@@ -35,9 +37,11 @@ print(model.names)
 def root():
     return {"ok": True}
 
-@app.post("/track")
-def start_track(video: UploadFile = File(...)):
-    (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
+def run_track_job():
+    # All the existing processing code from start_track moves here:
+    # opening the video, setting up the writer, the frame loop with
+    # YOLO inference and the per-track aggregation, the cap/writer
+    # release calls, building the tracks list.
     input_path = VIDEOS_DIR / "input.mp4"
 
     cap = cv2.VideoCapture(str(input_path))
@@ -116,10 +120,15 @@ def start_track(video: UploadFile = File(...)):
     ]   
     print("Output video saved to" f"http://localhost:8000/videos/output.mp4?t={int(time.time())}")
 
+
+@app.post("/track")
+def start_track(video: UploadFile = File(...)):
+    (VIDEOS_DIR / "input.mp4").write_bytes(video.file.read())
+    run_track_job()
     return {
         "status": "done",
-        "video_url": f"http://localhost:8000/videos/output_final.mp4?t={int(time.time())}",
-        "tracks": tracks,
+        # "video_url": f"http://localhost:8000/videos/output_final.mp4?t={int(time.time())}",
+        # "tracks": tracks,
     }
 
 if __name__ == "__main__":
