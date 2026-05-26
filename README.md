@@ -8,7 +8,7 @@
 1. Run ```python -m venv venv```
 1. Run ```.\venv\scripts\activate```
 1. Run ```pip install -r .\requirements.txt``` 
-1. run ```main.py`
+1. run ```main.py```
 1. In new terminal run ```npm i```
 1. Run ```npm run dev``` 
 
