@@ -2,14 +2,15 @@
 
 # Run instructions
 
-1. Open PowerShell terminal in admin
-1. Run winget install ffmpeg to install ffmpeg 
-1. Navigate to backend folder
-1. Run .\venv\scripts\Activate.ps1
-1. run pip install -r .\requirements.txt  
-1. run main.py
-1. In new terminal run npm i
-1. Run npm run dev 
+1. Open PowerShell terminal in admin mode (run ```Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser```)
+1. Run ```winget install ffmpeg``` to install ffmpeg 
+1. Navigate to backend folder (```cd backend```)
+1. Run ```python -m venv venv```
+1. Run ```.\venv\scripts\activate```
+1. Run ```pip install -r .\requirements.txt``` 
+1. run ```main.py`
+1. In new terminal run ```npm i```
+1. Run ```npm run dev``` 
 
 # Dataset Details
 Used the YOLO bounding boxes to train model. 50 epochs with 8 batches. 
