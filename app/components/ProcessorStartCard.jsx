@@ -11,32 +11,44 @@ import SoundButton from '@/app/components/ConfirmButton';
 import StatusCard from '@/app/components/StatusCard';
 
 export default function ProcessorStartCard() {
-    const [rangeNum, setNum] = useState(60);
-    const [hexNum, setHex] = useState("#2a3e25");
+    //const [rangeNum, setNum] = useState(60);
+    //const [hexNum, setHex] = useState("#2a3e25");
     //const [filename, setFile] = useState("");
-    const [centroid, setCentroid] = useState(null);
+    //const [centroid, setCentroid] = useState(null);
     const [jobId, setJobId] = useState("");
     const [statusFE, setStatusFe] = useState("");
     const [URL, setURL] = useState("");
     const [file, setFile] = useState(null);
     const [response, setResponse] = useState(null);
+    const [polling, setPolling] = useState(false);
     const [loading, setLoading] = useState(false);
-
+    const [percent, setPercent] = useState(0);
+    const [result, setResult] = useState(null);
 
     async function handleSubmit(e) {
         e.preventDefault();
         if (!file) return;
 
-        try {
-            setLoading(true);
-            const data = await uploadVideo(file);
-            setResponse(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+        setResult(null);
+        setPercent(0);
+        await uploadVideo(file);
+        setPolling(true);
     }
+
+    // async function handleSubmit(e) {
+    //     e.preventDefault();
+    //     if (!file) return;
+
+    //     try {
+    //         setLoading(true);
+    //         const data = await uploadVideo(file);
+    //         setResponse(data);
+    //     } catch (err) {
+    //         console.error(err);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // }
 
     function setNumState(event) {
         setNum(event.target.value);
@@ -56,37 +68,31 @@ export default function ProcessorStartCard() {
     }
 
     useEffect(() => {
-        if (!jobId) return;
+        if (!polling) return;
 
-        let intervalId = null;
-        let stopped = false;
-
-        async function poll() {
+        const intervalId = setInterval(async () => {
             try {
-                const status = await getJobStatus(jobId.jobId);
-                setURL(jobId.jobId);
-                console.log("URL:", URL);
-                setStatusFe(status.status);
-                console.log("STATUS:", status);
+                const job = await getJobStatus();
+                setPercent(job.percent ?? 0);
 
-                if (status.status === "done") {
-                    console.log("Job finished!", status.result);
-                    stopped = true;
+                if (job.status === "done") {
+                    setResult(job.result);
+                    setPolling(false);
+                    setPercent(100);
                     clearInterval(intervalId);
-
+                } else if (job.status === "error") {
+                    console.error("Job error:", job.message);
+                    setPolling(false);
+                    clearInterval(intervalId);
                 }
             } catch (err) {
-                console.error("Error polling job:", err);
+                console.error("Polling error:", err);
             }
-        }
-        intervalId = setInterval(poll, 2000);
-        poll();
+        }, 2000);
 
-        return () => {
-            clearInterval(intervalId);
-            stopped = true;
-        };
-    }, [jobId])
+        return () => clearInterval(intervalId);
+    }, [polling]);
+
 
 
     return (
@@ -102,11 +108,17 @@ export default function ProcessorStartCard() {
                     </div>
                 </div>
             </form>
-            {loading && <p>Processing...</p>}
-            {response && (
+            {polling && (
                 <>
-                    <video src={response.video_url} controls />
-                    {response.tracks && response.tracks.length > 0 && (
+                    <p>Processing...</p>
+                    <progress value={percent} max={100} />
+                </>
+            )}
+            {result && (
+                <>
+                    <progress value={100} max={100} />
+                    <video src={result.video_url} controls />
+                    {result.tracks && result.tracks.length > 0 && (
                         <table>
                             <thead>
                                 <tr>
@@ -116,7 +128,7 @@ export default function ProcessorStartCard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {response.tracks.map((track) => (
+                                {result.tracks.map((track) => (
                                     <tr key={track.track_id}>
                                         <td>{track.track_id}</td>
                                         <td>{track.label}</td>
