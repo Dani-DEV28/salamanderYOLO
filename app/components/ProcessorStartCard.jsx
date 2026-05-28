@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect } from "react";
 import { getJobStatus } from '../api/binarize/route';
-
 import { uploadVideo } from "../api/binarize/routes";
 
 export default function ProcessorStartCard() {
@@ -9,7 +8,7 @@ export default function ProcessorStartCard() {
     const [status, setStatus] = useState("");
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(false);
-
+    const [percent, setPercent] = useState(0);
 
     async function handleSubmit(e) {
         e.preventDefault();
@@ -17,6 +16,7 @@ export default function ProcessorStartCard() {
 
         try {
             setLoading(true);
+            setPercent(0);
             const data = await uploadVideo(file);
             setStatus(data.status || "processing");
         } catch (err) {
@@ -36,11 +36,13 @@ export default function ProcessorStartCard() {
                 const job = await getJobStatus();
                 console.log("STATUS:", job);
 
+                setPercent(job.percent ?? 0);
                 setStatus(job.status || "processing");
 
                 if (job.status === "done") {
                     console.log("Job finished!", job.result);
                     setResult(job.result);
+                    setPercent(100);
                     clearInterval(intervalId);
 
                 }
@@ -70,7 +72,12 @@ export default function ProcessorStartCard() {
                     </div>
                 </div>
             </form>
-            {(loading || status === "processing") && <p>Processing...</p>}
+            {(loading || status === "processing") && (
+                <>
+                    <p>Processing...</p>
+                    <progress value={percent} max={100} />
+                </>
+            )}
             {result && (
                 <>
                     <video src={result.video_url} controls />
