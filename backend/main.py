@@ -83,6 +83,7 @@ def run_track_job():
             tracks = []
             result = model.predict(frame, verbose=False, conf=0.1)[0]
             boxes = result.boxes
+            active_count = len(boxes) if boxes is not None else 0
 
             if boxes is not None and len(boxes) > 0:
                 tracks = tracker.update(boxes, frame)
@@ -93,7 +94,6 @@ def run_track_job():
                         frames_seen[tid] += 1
                         label_for[tid] = model.names[cls_id]
 
-            active_count = len(tracks) if tracks is not None else 0
             current_second = int(frame_idx / fps) if fps else frame_idx
             if current_second != last_recorded_second:
                 count_over_time.append({
@@ -104,7 +104,7 @@ def run_track_job():
 
             writer.write(result.plot())
             if frame_idx % 30 == 0:
-                print(f"frame {frame_idx}/{total} | tracks: {active_count}")
+                print(f"frame {frame_idx}/{total} | detections: {active_count}")
             job["percent"] = int((frame_idx + 1) / total * 100)
 
         cap.release()
